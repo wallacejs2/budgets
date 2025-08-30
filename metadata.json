@@ -1,5 +1,5 @@
 {
   "name": "Roommate Budget Splitter",
-  "description": "A financial tracker and monthly budget tool designed to help roommates easily split expenses and determine who owes whom at the end of the month. Features AI-powered expense categorization.",
+  "description": "A financial tracker and monthly budget tool designed to help roommates easily split expenses and determine who owes whom at the end of the month.",
   "requestFramePermissions": []
 }

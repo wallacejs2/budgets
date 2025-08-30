@@ -1,8 +1,6 @@
-import React, { useState, useCallback, ChangeEvent, FormEvent, useRef, useEffect } from 'react';
+import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import { Expense, User, SplitMethod } from '../types';
 import { EXPENSE_CATEGORIES } from '../constants';
-import { categorizeExpense, parseReceipt } from '../services/geminiService';
-import { Camera } from './icons/Camera';
 
 interface ExpenseFormProps {
   onAddExpense: (expense: Omit<Expense, 'id'>) => void;
@@ -11,12 +9,6 @@ interface ExpenseFormProps {
   onClose: () => void;
 }
 
-const LoadingSpinner: React.FC = () => (
-    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-        <div className="w-5 h-5 border-2 border-gray-300 border-t-indigo-600 rounded-full animate-spin"></div>
-    </div>
-);
-
 const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense, onUpdateExpense, expenseToEdit, onClose }) => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -24,9 +16,6 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense, onUpdateExpense
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
   const [paidBy, setPaidBy] = useState<User>(User.Me);
   const [splitMethod, setSplitMethod] = useState<SplitMethod>(SplitMethod.Equally);
-  const [isCategorizing, setIsCategorizing] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditMode = expenseToEdit !== null;
 
@@ -41,20 +30,6 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense, onUpdateExpense
     }
   }, [expenseToEdit, isEditMode]);
 
-  const handleDescriptionBlur = useCallback(async () => {
-    if (description.trim().length > 3) {
-      setIsCategorizing(true);
-      try {
-        const suggestedCategory = await categorizeExpense(description);
-        if (suggestedCategory) {
-          setCategory(suggestedCategory);
-        }
-      } finally {
-        setIsCategorizing(false);
-      }
-    }
-  }, [description]);
-  
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!description || !amount || !date || !category) {
@@ -77,84 +52,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense, onUpdateExpense
       }
   };
 
-  const handleScanReceipt = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsScanning(true);
-    try {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-            const base64String = (reader.result as string).split(',')[1];
-            const receiptData = await parseReceipt(base64String, file.type);
-            
-            if (receiptData) {
-                if (receiptData.description) setDescription(receiptData.description);
-                if (receiptData.amount) setAmount(String(receiptData.amount));
-                if (receiptData.date) setDate(receiptData.date);
-
-                if (receiptData.description) {
-                     setIsCategorizing(true);
-                     try {
-                        const suggestedCategory = await categorizeExpense(receiptData.description);
-                        if (suggestedCategory) setCategory(suggestedCategory);
-                     } finally {
-                        setIsCategorizing(false);
-                     }
-                }
-            } else {
-              alert('Could not extract details from the receipt. Please enter them manually.');
-            }
-        };
-        reader.onerror = (error) => {
-             console.error('Error reading file:', error);
-             alert('Failed to read the receipt file.');
-        };
-    } catch (error) {
-        console.error('Error parsing receipt:', error);
-        alert('An error occurred while scanning the receipt.');
-    } finally {
-        setIsScanning(false);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-md shadow-2xl p-8 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-2xl font-bold text-gray-800 mb-6">{isEditMode ? 'Edit Expense' : 'Add New Expense'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex justify-center mb-4">
-              <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleScanReceipt} 
-                  className="hidden" 
-                  accept="image/*"
-                  disabled={isScanning}
-              />
-              <button 
-                  type="button" 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isScanning}
-                  className="flex items-center gap-2 py-2 px-4 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 font-semibold disabled:opacity-50 disabled:cursor-wait transition-colors"
-              >
-                  {isScanning ? (
-                      <>
-                          <div className="w-5 h-5 border-2 border-gray-300 border-t-indigo-600 rounded-full animate-spin"></div>
-                          Scanning...
-                      </>
-                  ) : (
-                      <>
-                          <Camera className="w-5 h-5"/>
-                          Scan Receipt
-                      </>
-                  )}
-              </button>
-          </div>
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
             <div className="relative">
@@ -163,12 +65,10 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense, onUpdateExpense
                     id="description"
                     value={description}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)}
-                    onBlur={handleDescriptionBlur}
                     className="mt-1 block w-full border border-gray-300 rounded shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="e.g., Weekly groceries"
                     required
                 />
-                {isCategorizing && <LoadingSpinner />}
             </div>
           </div>
           <div>
