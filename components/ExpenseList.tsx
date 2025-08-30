@@ -2,7 +2,7 @@ import React from 'react';
 import { Expense } from '../types';
 import { Trash } from './icons/Trash';
 import { Pencil } from './icons/Pencil';
-import { Groceries, Utilities, Rent, Entertainment, Dining, Transportation, Shopping, Health, Other } from './icons/CategoryIcons';
+import { Groceries, Utilities, Rent, Entertainment, Dining, Transportation, Shopping, Health, Subscriptions, Other } from './icons/CategoryIcons';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -14,6 +14,7 @@ const categoryIcons: { [key: string]: React.FC<{className: string}> } = {
   Groceries: Groceries,
   Utilities: Utilities,
   Rent: Rent,
+  Subscriptions: Subscriptions,
   Entertainment: Entertainment,
   'Dining Out': Dining,
   Transportation: Transportation,
