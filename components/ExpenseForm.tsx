@@ -36,9 +36,16 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense, onUpdateExpense
         alert("Please fill out all fields.");
         return;
     }
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      alert("Please enter a valid, positive amount.");
+      return;
+    }
+
     const expenseData = {
         description,
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         date,
         category,
         paidBy,
@@ -82,6 +89,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense, onUpdateExpense
               placeholder="0.00"
               required
               step="0.01"
+              min="0.01"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
